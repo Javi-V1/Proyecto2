@@ -11,9 +11,8 @@
             try
             {
                 //Inicializa el objeto de escritura
-                using StreamWriter outputFile = new(Path.Combine(ruta_De_Documento, nombre_Documento), true);
-                outputFile.WriteLine(texto);
-
+                using StreamWriter outputFile = new(Path.Combine(ruta_De_Documento, nombre_Documento), false);
+                outputFile.Write(texto);
                 return true;
             }
             catch (Exception e)
