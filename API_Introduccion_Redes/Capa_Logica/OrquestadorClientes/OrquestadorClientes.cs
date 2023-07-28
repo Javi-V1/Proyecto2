@@ -29,14 +29,8 @@ namespace Capa_Logica.OrquestadorClientes
 
             List <Cliente> clientes = new List<Cliente>();
 
-            /*
-            clientes = db.ObtengaClientes_DB();
-            */
-
             string contenido = lectura.Lee_Archivo("../Clientes.txt");
-            Cliente clienteleido = ayundate.Deserialize_Modelo<Cliente>(contenido);
-            clientes.Add(clienteleido);
-            
+            clientes = ayundate.Deserialize_Modelo<List<Cliente>>(contenido);     
 
             return clientes;
         
@@ -46,9 +40,10 @@ namespace Capa_Logica.OrquestadorClientes
 
             try
             {
-                Cliente clientes = new Cliente();
+                List<Cliente> clientes = ObtengaClientes();
+                clientes.Add(cliente);
                 string jsonClientes = ayundate.Serialice_Modelo(clientes);
-                escritura.Escriba_En_TxT(jsonClientes, "../", "Clientes1.txt");
+                escritura.Escriba_En_TxT(jsonClientes, "../", "Clientes.txt");
 
                 return true;
             }
@@ -57,6 +52,73 @@ namespace Capa_Logica.OrquestadorClientes
 
                 return false;
             }        
+        }
+
+        public bool Login(string nombre, string identificacion) {
+
+            List<Cliente> clientes = ObtengaClientes();
+
+            foreach (Cliente cliente in clientes)
+            {
+                if (cliente.Nombre == nombre && cliente.Identificacion == identificacion)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public bool ActualiceCliente(string identificacion,string apellido2) {
+            try
+            {
+                List<Cliente> clientes = ObtengaClientes();
+                foreach (Cliente cliente in clientes)
+                {
+
+                    if (cliente.Identificacion == identificacion)
+                    {
+                        cliente.Apellido_2 = apellido2;
+                    }
+                }
+                string jsonClientes = ayundate.Serialice_Modelo(clientes);
+                escritura.Escriba_En_TxT(jsonClientes, "../", "Clientes.txt");
+                return true;
+            }
+            catch (Exception)
+            {
+
+                return false;
+            }           
+        }
+
+        public bool BorreCLiente(string identificacion) {
+            try
+            {
+                List<Cliente> clientes = ObtengaClientes();
+                Cliente clienteABorrar = new Cliente();
+                foreach (Cliente cliente in clientes)
+                {
+
+                    if (cliente.Identificacion == identificacion)
+                    {
+                        clienteABorrar = cliente;
+                    }
+                }
+                if (clienteABorrar != null)
+                {
+                    clientes.Remove(clienteABorrar);
+                }
+
+                string jsonClientes = ayundate.Serialice_Modelo(clientes);
+                escritura.Escriba_En_TxT(jsonClientes, "../", "Clientes.txt");
+                return true;
+            }
+            catch (Exception)
+            {
+
+                return false;
+            }
+          
         }
     }
 }
