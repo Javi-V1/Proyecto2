@@ -10,6 +10,7 @@ namespace Capa_Logica.ECC
     public class Servidor
     {
         public byte[] servidorPublicKey;
+        internal byte[] servidorKey;
 
         public Servidor()
         {
@@ -18,15 +19,10 @@ namespace Capa_Logica.ECC
                 servidor.KeyDerivationFunction = ECDiffieHellmanKeyDerivationFunction.Hash;
                 servidor.HashAlgorithm = CngAlgorithm.ECDiffieHellmanP521;
                 servidorPublicKey = servidor.PublicKey.ToByteArray();
-                Usuario usuario = new Usuario();
-                CngKey usuarioKey = CngKey.Import(usuario.usuarioPublicKey, CngKeyBlobFormat.EccPublicBlob);
-                byte[] servidorKey = servidor.DeriveKeyMaterial(usuarioKey);
-                byte[] encryptedMessage = null;
-                byte[] iv = null;
             }
         }
 
-        private static byte[] Send(byte[] key, string secretMessage, out byte[] encryptedMessage, out byte[] iv)
+        internal static byte[] Send(byte[] key, string secretMessage, out byte[] encryptedMessage, out byte[] iv)
         {
             using (Aes aes = new AesCryptoServiceProvider())
             {
@@ -43,6 +39,17 @@ namespace Capa_Logica.ECC
                     encryptedMessage = ciphertext.ToArray();
                     return encryptedMessage;
                 }
+            }
+        }
+
+        internal byte[] DeriveKeyMaterial(byte[] usuarioPublicKey)
+        {
+            using (ECDiffieHellmanCng servidor = new ECDiffieHellmanCng())
+            {
+                CngKey usuarioKey = CngKey.Import(usuarioPublicKey, CngKeyBlobFormat.EccPublicBlob);
+                servidor.KeyDerivationFunction = ECDiffieHellmanKeyDerivationFunction.Hash;
+                servidor.HashAlgorithm = CngAlgorithm.Sha256;
+                return servidor.DeriveKeyMaterial(usuarioKey);
             }
         }
     }

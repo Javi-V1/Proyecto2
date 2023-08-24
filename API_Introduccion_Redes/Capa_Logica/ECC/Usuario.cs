@@ -12,8 +12,9 @@ namespace Capa_Logica.ECC
     public class Usuario
     {
         public byte[] usuarioPublicKey;
-        private byte[] usuarioKey;
-        public Usuario()
+        internal byte[] usuarioKey;
+        internal byte[] sharedkey;
+        public Usuario(byte[] serverPublicKey)
         {
             using(ECDiffieHellmanCng usuario = new ECDiffieHellmanCng())
             {
@@ -21,7 +22,8 @@ namespace Capa_Logica.ECC
                 usuario.KeyDerivationFunction = ECDiffieHellmanKeyDerivationFunction.Hash;
                 usuario.HashAlgorithm = CngAlgorithm.Sha256;
                 usuarioPublicKey = usuario.PublicKey.ToByteArray();
-                usuarioKey = usuario.DeriveKeyMaterial(CngKey.Import(servidor.servidorPublicKey, CngKeyBlobFormat.EccPublicBlob))
+                usuarioKey = usuario.DeriveKeyMaterial(CngKey.Import(serverPublicKey, CngKeyBlobFormat.EccPublicBlob));
+                byte[] sharedKey = usuarioKey;
             }
         }
 
@@ -44,6 +46,15 @@ namespace Capa_Logica.ECC
                     }
                 }
                 
+            }
+        }
+
+        public byte[] GenerarIV()
+        {
+            using (Aes aes = new AesCryptoServiceProvider())
+            {
+                aes.GenerateIV();
+                return aes.IV;
             }
         }
     }

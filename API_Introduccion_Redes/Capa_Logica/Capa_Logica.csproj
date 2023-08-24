@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Capa_Acceso_Datos\Capa_Acceso_Datos.csproj" />
     <ProjectReference Include="..\Capa_Modelo\Capa_Modelo.csproj" />
   </ItemGroup>

@@ -2,9 +2,9 @@
 
 namespace Capa_Logica.Ayudante
 {
-    public class Ayundate_JSON
+    public class Ayudante_JSON
     {
-        public Ayundate_JSON()
+        public Ayudante_JSON()
         {
             
         }
