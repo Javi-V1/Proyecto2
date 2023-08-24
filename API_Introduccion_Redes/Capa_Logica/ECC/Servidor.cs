@@ -13,6 +13,7 @@ namespace Capa_Logica.ECC
         public byte[] servidorPublicKey;
         internal byte[] servidorKey;
         internal static byte[] ivE;
+        internal static byte[] key;
 
         public Servidor()
         {
@@ -25,15 +26,16 @@ namespace Capa_Logica.ECC
             }
         }
 
-        internal static byte[] Send(byte[] key, string secretMessage, out byte[] encryptedMessage, out byte[] iv)
+        internal static byte[] Send(byte[] pkey, string secretMessage, out byte[] encryptedMessage, out byte[] iv)
         {
             using (Aes aes = new AesCryptoServiceProvider())
             {
                 aes.KeySize = 256;
-                aes.Key = key;
+                aes.Key = pkey;
                 aes.GenerateIV();
                 iv = aes.IV;
                 ivE = iv;
+                key = pkey;
                 //Encrypt the message
                 using (MemoryStream ciphertext = new MemoryStream())
                 using (CryptoStream cs = new CryptoStream(ciphertext, aes.CreateEncryptor(), CryptoStreamMode.Write))

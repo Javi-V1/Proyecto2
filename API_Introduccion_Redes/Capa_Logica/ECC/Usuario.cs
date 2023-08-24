@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Metadata;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Security.Policy;
 using System.Text;
@@ -14,8 +15,8 @@ namespace Capa_Logica.ECC
     public class Usuario
     {
         public byte[] usuarioPublicKey;
-        internal byte[] usuarioKey;
-        internal byte[] sharedkey;
+        public byte[] usuarioKey;
+        
         public Usuario(byte[] serverPublicKey)
         {
             using(ECDiffieHellmanCng usuario = new ECDiffieHellmanCng())
@@ -27,12 +28,11 @@ namespace Capa_Logica.ECC
                 CngKey serverKey = CngKey.Import(serverPublicKey, CngKeyBlobFormat.EccPublicBlob);
                 this.usuarioPublicKey = usuario.PublicKey.ToByteArray();
                 this.usuarioKey = usuario.DeriveKeyMaterial(serverKey);
-                this.sharedkey = this.usuarioKey;
             }
         }
         public byte[] GetSharedKey()
         {
-            return sharedkey;
+            return usuarioKey;
         }
 
         public string Receive(byte[] encryptedMessage, byte[] piv, byte[] psharedKey)

@@ -11,13 +11,19 @@ namespace Capa_Controller.Controllers
     [Route("[Controller]")]
     public class EjemploController : Controller
     {
-        private OrquestadorPersonas orquestador = new OrquestadorPersonas();
+        private OrquestadorPersonas orquestador;
 
         public EjemploController()
         {
-            orquestador.ProcesarUsuarios();
+            orquestador = new OrquestadorPersonas();
         }
-
+        [HttpGet("ProcesarUsuarios")]
+        public IActionResult ProcesarUsuarios()
+        {
+            bool result = orquestador.ProcesarUsuarios();
+            return result ? Ok("Se procesaron correctamente los datos") : BadRequest();
+        }
+        
         [HttpGet("LoginAdmin")]
         public IActionResult LoginAdmin(string sharedKeyAchv1, string sharedKeyAchv2, string sharedKeyAchv3)
         {

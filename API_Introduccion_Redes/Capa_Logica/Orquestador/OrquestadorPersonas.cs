@@ -2,6 +2,7 @@
 using Capa_Logica.Ayudante;
 using Capa_Logica.ECC;
 using Capa_Modelo.Persona;
+using Microsoft.VisualBasic;
 using Newtonsoft.Json;
 using System;
 using System.Collections;
@@ -20,11 +21,12 @@ namespace Capa_Logica.Orquestador
         public Escritura_Txt escritura;
         public Lectura_Txt lectura;
         private Servidor servidor;
-        private Usuario usuario;
+        private Usuario usuario; 
         private string keyAchv1;
         private string keyAchv2;
         private string keyAchv3;
         private bool authLogIn = false;
+        List<string> passkey = new List<string>();
         public OrquestadorPersonas()
         {
             ayudante = new Ayudante_JSON();
@@ -34,33 +36,41 @@ namespace Capa_Logica.Orquestador
             usuario = new Usuario(servidor.servidorPublicKey);
         }
         
-        public void ProcesarUsuarios()
+        public bool ProcesarUsuarios()
         {
-            List<Persona> Listapersonas1 = new List<Persona>();
-            List<Persona> Listapersonas2 = new List<Persona>();
-            List<Persona> Listapersonas3 = new List<Persona>();
+            try
+            {
+                List<Persona> Listapersonas1 = new List<Persona>();
+                List<Persona> Listapersonas2 = new List<Persona>();
+                List<Persona> Listapersonas3 = new List<Persona>();
+                DividirLista(Listapersonas1, Listapersonas2, Listapersonas3);
+                EncriptarListas(Listapersonas1, Listapersonas2, Listapersonas3);
 
-            DividirLista(Listapersonas1, Listapersonas2, Listapersonas3);
-            EncriptarListas(Listapersonas1, Listapersonas2, Listapersonas3);
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
         private void EncriptarListas(List<Persona> Listapersonas1, List<Persona> Listapersonas2, List<Persona> Listapersonas3)
         {
             Thread th2 = new Thread(() =>
             {
                 EncriptarLista(Listapersonas1, "lista1encrypted.txt");
-                keyAchv1 = GenerarLlaveCompartida("lista1encrypted.txt");
+                keyAchv1 = DocuLlaves1();
             });
 
             Thread th3 = new Thread(() =>
             {
                 EncriptarLista(Listapersonas2, "lista2encrypted.txt");
-                keyAchv2 = GenerarLlaveCompartida("lista2encrypted.txt");
+                keyAchv2 = DocuLlaves2();
             });
 
             Thread th4 = new Thread(() =>
             {
                 EncriptarLista(Listapersonas3, "lista3encrypted.txt");
-                keyAchv3 = GenerarLlaveCompartida("lista3encrypted.txt");
+                keyAchv3 = DocuLlaves3();
             });
 
                 th2.Start();
@@ -106,27 +116,64 @@ namespace Capa_Logica.Orquestador
             finalizarTh = true;
             th1.Join();
         }
-        private string GenerarLlaveCompartida(string rutaArchivo)
+        
+        public string DocuLlaves1()
+        {
+            escritura.Escriba_En_TxT(passkey.ToString(), "../", "listakeys.txt");
+            try
+            {
+                byte[] llaveB = usuario.GetSharedKey();
+                string llaveS = Convert.ToBase64String(llaveB);
+                escritura.Escriba_En_TxT(llaveS, "../", "llaveCompartida1.txt");
+                return llaveS;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+            
+        }
+        public string DocuLlaves2()
         {
             try
             {
                 byte[] llaveB = usuario.GetSharedKey();
                 string llaveS = Convert.ToBase64String(llaveB);
-                escritura.Escriba_En_TxT(llaveS, "../", rutaArchivo);
+                escritura.Escriba_En_TxT(llaveS, "../", "llaveCompartida2.txt");
                 return llaveS;
             }
             catch (Exception)
             {
-                return null;
+
+                throw;
             }
-            
+           
         }
-        
-        public bool LoginAdmin(string sharedKeyAchv1, string sharedKeyAchv2, string sharedKeyAchv3)
+        public string DocuLlaves3()
         {
             try
             {
-                if (sharedKeyAchv1 == keyAchv1 && sharedKeyAchv2 == keyAchv2 && sharedKeyAchv3 == keyAchv3)
+                byte[] llaveB = usuario.GetSharedKey();
+                string llaveS = Convert.ToBase64String(llaveB);
+                escritura.Escriba_En_TxT(llaveS, "../", "llaveCompartida3.txt");
+                return llaveS;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+            
+        }
+
+
+        public bool LoginAdmin(string sharedKeyAchv1, string sharedKeyAchv2, string sharedKeyAchv3)
+        {
+            
+            try
+            {
+                if (sharedKeyAchv1 == keyAchv1 || sharedKeyAchv2 == keyAchv2 || sharedKeyAchv3 == keyAchv3)
                 {
                     authLogIn = true;
                     return true;
@@ -223,7 +270,7 @@ namespace Capa_Logica.Orquestador
             }
         }
 
-        public string Decrypt(byte[] mensajeEncriptado, string psharedkey) 
+        private string Decrypt(byte[] mensajeEncriptado, string psharedkey) 
         {
             try
             {
@@ -244,28 +291,21 @@ namespace Capa_Logica.Orquestador
                 return null;
             }
         }
-        
 
-        
         private void EncriptarLista(List<Persona> lista, string rutaArchivo) //obtiene una lista, y la encrypta posteriormente la guarda como un archivo encryptado
         {
+            
             string listaAEncriptar = ayudante.Serialice_Modelo(lista);
             byte[] encryptedData;
             byte[] iv;
             byte[] encrypted = Servidor.Send(usuario.usuarioKey, listaAEncriptar, out encryptedData, out iv);
+
+            passkey.Add(Convert.ToBase64String(Servidor.key));//////////////////////////////////
+
             string contenido = Convert.ToBase64String(encrypted);
             escritura.Escriba_En_TxT(contenido, "../", rutaArchivo);
         }
 
-        
-        public List<Persona> DesencriptarLista(string encryptedData, byte[] psharedKey)
-        {
-            byte[] iv = null;
-            byte[] decryptedData = Convert.FromBase64String(encryptedData);
-            string contenido = usuario.Receive(decryptedData, iv, psharedKey);
-            List<Persona> listaDesencriptada = ayudante.Deserialize_Modelo<List<Persona>>(contenido);
-            return listaDesencriptada;
-        }
         private List<Persona> AccederUsuarios()
         {
             try
@@ -281,21 +321,6 @@ namespace Capa_Logica.Orquestador
                 return null;
             }
             
-        }
-        public byte[] EncriptarLista(List<Persona> lista) //obtiene una lista, la encrypta y la retorna
-        {
-            string listaAEncriptar = ayudante.Serialice_Modelo(lista);
-            byte[] encryptedData;
-            byte[] iv;
-            byte [] encrypted= Servidor.Send(usuario.usuarioKey, listaAEncriptar, out encryptedData, out iv);
-            return encrypted;
-        }
-        public List<Persona> DesencriptarLista(byte[] encryptedData, byte[] psharedKey) //obtiene una cadena de byte de una lista encryptada, los desencripta y retorna una lista
-        {
-            byte[] iv = null;
-            string contenidoDesencriptado = usuario.Receive(encryptedData, iv, psharedKey);
-            List<Persona> listaDesencriptada = ayudante.Deserialize_Modelo<List<Persona>>(contenidoDesencriptado);
-            return listaDesencriptada;
         }
     }
 }
