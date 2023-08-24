@@ -19,7 +19,7 @@ namespace Capa_Logica.ECC
             using (ECDiffieHellmanCng servidor = new ECDiffieHellmanCng())
             {
                 servidor.KeyDerivationFunction = ECDiffieHellmanKeyDerivationFunction.Hash;
-                servidor.HashAlgorithm = CngAlgorithm.ECDiffieHellmanP521;
+                servidor.HashAlgorithm = CngAlgorithm.Sha256;
                 servidorPublicKey = servidor.PublicKey.ToByteArray();
                 servidorKey = servidor.Key.Export(CngKeyBlobFormat.EccPrivateBlob);
             }
@@ -29,6 +29,7 @@ namespace Capa_Logica.ECC
         {
             using (Aes aes = new AesCryptoServiceProvider())
             {
+                aes.KeySize = 256;
                 aes.Key = key;
                 aes.GenerateIV();
                 iv = aes.IV;

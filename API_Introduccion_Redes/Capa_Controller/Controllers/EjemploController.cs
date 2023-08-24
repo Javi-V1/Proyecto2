@@ -21,9 +21,9 @@ namespace Capa_Controller.Controllers
         }
 
         [HttpPost("Decrypt")]
-        public IActionResult Decrypt([FromBody] ParametrosDecrypt parametros)
+        public IActionResult Decrypt(byte[] mensajeEncrypt, string sharedKey)
         {
-            string mensajedesencriptado = orquestador.pruebaDecrypt(parametros.mensajeEncrypt, parametros.sharedKey);
+            string mensajedesencriptado = orquestador.pruebaDecrypt(mensajeEncrypt, sharedKey);
             return Ok(mensajedesencriptado);
         }
     }
