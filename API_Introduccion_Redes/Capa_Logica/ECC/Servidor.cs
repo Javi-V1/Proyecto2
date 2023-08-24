@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,6 +12,7 @@ namespace Capa_Logica.ECC
     {
         public byte[] servidorPublicKey;
         internal byte[] servidorKey;
+        internal static byte[] ivE;
 
         public Servidor()
         {
@@ -19,6 +21,7 @@ namespace Capa_Logica.ECC
                 servidor.KeyDerivationFunction = ECDiffieHellmanKeyDerivationFunction.Hash;
                 servidor.HashAlgorithm = CngAlgorithm.ECDiffieHellmanP521;
                 servidorPublicKey = servidor.PublicKey.ToByteArray();
+                servidorKey = servidor.Key.Export(CngKeyBlobFormat.EccPrivateBlob);
             }
         }
 
@@ -27,8 +30,9 @@ namespace Capa_Logica.ECC
             using (Aes aes = new AesCryptoServiceProvider())
             {
                 aes.Key = key;
+                aes.GenerateIV();
                 iv = aes.IV;
-
+                ivE = iv;
                 //Encrypt the message
                 using (MemoryStream ciphertext = new MemoryStream())
                 using (CryptoStream cs = new CryptoStream(ciphertext, aes.CreateEncryptor(), CryptoStreamMode.Write))
@@ -40,6 +44,11 @@ namespace Capa_Logica.ECC
                     return encryptedMessage;
                 }
             }
+        }
+
+        public byte[] GetivE()
+        {
+            return ivE;
         }
 
         internal byte[] DeriveKeyMaterial(byte[] usuarioPublicKey)

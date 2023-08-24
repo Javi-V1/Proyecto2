@@ -3,6 +3,7 @@ using Capa_Logica.Orquestador;
 using Capa_Modelo.Persona;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Reflection.Metadata.Ecma335;
 
 namespace Capa_Controller.Controllers
 {
@@ -12,11 +13,18 @@ namespace Capa_Controller.Controllers
     {
         private OrquestadorPersonas orquestador = new OrquestadorPersonas();
 
-        [HttpGet("Prueba")]
-        public IActionResult Prueba()
+        [HttpGet("Encript")]
+        public IActionResult Encript()
         {
-            return Ok(orquestador.prueba());
+            byte[] mensajeencriptado = orquestador.pruebaEncrypt();
+            return Ok(mensajeencriptado);
         }
 
+        [HttpPost("Decrypt")]
+        public IActionResult Decrypt([FromBody] ParametrosDecrypt parametros)
+        {
+            string mensajedesencriptado = orquestador.pruebaDecrypt(parametros.mensajeEncrypt, parametros.sharedKey);
+            return Ok(mensajedesencriptado);
+        }
     }
 }

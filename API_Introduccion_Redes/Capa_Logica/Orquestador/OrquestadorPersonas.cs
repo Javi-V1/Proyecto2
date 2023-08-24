@@ -70,15 +70,47 @@ namespace Capa_Logica.Orquestador
             th1.Join();
         }
 
-        public string prueba()
+        public bool GenerarLlaveCompartida()
         {
             try
             {
-                string contenido = lectura.Lee_Archivo("../Personas.json");
-                List<Persona> personas = JsonConvert.DeserializeObject<List<Persona>>(contenido);
-                //string prueba = Encoding.ASCII.GetString(EncriptarLista(personas));
-                string prueba2 = usuario.Receive(EncriptarLista(personas), usuario.GenerarIV());
-                return prueba2;
+                //Encoding.ASCII.GetString()
+                byte[] llaveB = usuario.GetSharedKey();
+                string llaveS = Convert.ToBase64String(llaveB);
+                escritura.Escriba_En_TxT(llaveS, "../", "llaveCompartida.txt");
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+            
+        }
+        public byte[] pruebaEncrypt()
+        {
+            string contenido = lectura.Lee_Archivo("../Personas.json");
+            List<Persona> personas = JsonConvert.DeserializeObject<List<Persona>>(contenido);
+
+            byte[] mensajeEncriptado = EncriptarLista(personas);
+            GenerarLlaveCompartida();
+            return mensajeEncriptado;
+        }
+        public string pruebaDecrypt(byte[] mensajeEncriptado, string psharedkey)
+        {
+            try
+            {
+                if(psharedkey != null)
+                {
+                    //string prueba = Encoding.ASCII.GetString(EncriptarLista(personas));
+                    byte[] sharedkey = Convert.FromBase64String(psharedkey);
+                    string prueba2 = usuario.Receive(mensajeEncriptado, servidor.GetivE(), sharedkey);
+                    return prueba2;
+                }
+                else
+                {
+                    return null;
+                }
+                
             }
             catch (Exception e)
             {
@@ -96,10 +128,10 @@ namespace Capa_Logica.Orquestador
             return encrypted;
         }
         
-        public List<Persona> DesencriptarLista(byte[] encryptedData)
+        public List<Persona> DesencriptarLista(byte[] encryptedData, byte[] psharedKey)
         {
             byte[] iv = null;
-            string contenidoDesencriptado = usuario.Receive(encryptedData, iv);
+            string contenidoDesencriptado = usuario.Receive(encryptedData, iv, psharedKey);
             List<Persona> listaDesencriptada = ayudante.Deserialize_Modelo<List<Persona>>(contenidoDesencriptado);
             return listaDesencriptada;
         }

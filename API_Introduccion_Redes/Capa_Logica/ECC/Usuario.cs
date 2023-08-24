@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Capa_Acceso_Datos.Txt;
+using Capa_Modelo.Persona;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Metadata;
@@ -20,20 +22,24 @@ namespace Capa_Logica.ECC
             {
                 Servidor servidor = new Servidor(); 
                 usuario.KeyDerivationFunction = ECDiffieHellmanKeyDerivationFunction.Hash;
-                usuario.HashAlgorithm = CngAlgorithm.Sha256;
-                usuarioPublicKey = usuario.PublicKey.ToByteArray();
-                usuarioKey = usuario.DeriveKeyMaterial(CngKey.Import(serverPublicKey, CngKeyBlobFormat.EccPublicBlob));
-                byte[] sharedKey = usuarioKey;
+                usuario.HashAlgorithm = CngAlgorithm.ECDiffieHellmanP521;
+                CngKey serverKey = CngKey.Import(serverPublicKey, CngKeyBlobFormat.EccPublicBlob);
+                this.usuarioPublicKey = usuario.PublicKey.ToByteArray();
+                this.usuarioKey = usuario.DeriveKeyMaterial(serverKey);
+                this.sharedkey = this.usuarioKey;
             }
         }
+        public byte[] GetSharedKey()
+        {
+            return sharedkey;
+        }
 
-        public string Receive(byte[] encryptedMessage, byte[] iv)
+        public string Receive(byte[] encryptedMessage, byte[] piv, byte[] psharedKey)
         {
             using (Aes aes = new AesCryptoServiceProvider())
             {
-                aes.Key = usuarioKey;
-                aes.IV = iv;
-
+                aes.Key = psharedKey;
+                aes.IV = piv;
                 //Decrypt the message
                 using (MemoryStream plaintext = new MemoryStream())
                 {
@@ -49,13 +55,5 @@ namespace Capa_Logica.ECC
             }
         }
 
-        public byte[] GenerarIV()
-        {
-            using (Aes aes = new AesCryptoServiceProvider())
-            {
-                aes.GenerateIV();
-                return aes.IV;
-            }
-        }
     }
 }
