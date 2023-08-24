@@ -14,34 +14,38 @@ namespace Capa_Logica.ECC
 {
     public class Usuario
     {
+        private ECDiffieHellmanCng usuario;
         public byte[] usuarioPublicKey;
         public byte[] usuarioKey;
         
         public Usuario(byte[] serverPublicKey)
         {
-            using(ECDiffieHellmanCng usuario = new ECDiffieHellmanCng())
-            {
-                
-                Servidor servidor = new Servidor(); 
-                usuario.KeyDerivationFunction = ECDiffieHellmanKeyDerivationFunction.Hash;
-                usuario.HashAlgorithm = CngAlgorithm.Sha256;
-                CngKey serverKey = CngKey.Import(serverPublicKey, CngKeyBlobFormat.EccPublicBlob);
-                this.usuarioPublicKey = usuario.PublicKey.ToByteArray();
-                this.usuarioKey = usuario.DeriveKeyMaterial(serverKey);
-            }
+            usuario = new ECDiffieHellmanCng();
+
+            usuario.KeyDerivationFunction = ECDiffieHellmanKeyDerivationFunction.Hash;
+            usuario.HashAlgorithm = CngAlgorithm.Sha256;   
+
+            usuarioPublicKey = usuario.PublicKey.ToByteArray();
+
+            CngKey serverKey = CngKey.Import(serverPublicKey, CngKeyBlobFormat.EccPublicBlob);
+            usuario.KeySize = 256;
+            byte[] sharedSecret = usuario.DeriveKeyMaterial(serverKey);
+            usuarioKey = sharedSecret;
         }
-        public byte[] GetSharedKey()
+        public byte[] GetSharedKey(Usuario usuario)
         {
             return usuarioKey;
         }
 
-        public string Receive(byte[] encryptedMessage, byte[] piv, byte[] psharedKey)
+        public string Receive(byte[] encryptedMessage, byte[] iv, byte[] claveCifrado)
         {
             using (Aes aes = new AesCryptoServiceProvider())
             {
                 aes.KeySize = 256;
-                aes.Key = psharedKey;
-                aes.IV = piv;
+
+                aes.Key = claveCifrado;
+                aes.IV = iv;
+
                 //Decrypt the message
                 using (MemoryStream plaintext = new MemoryStream())
                 {
@@ -53,7 +57,6 @@ namespace Capa_Logica.ECC
                         return message;
                     }
                 }
-                
             }
         }
 

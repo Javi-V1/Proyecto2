@@ -25,9 +25,9 @@ namespace Capa_Controller.Controllers
         }
         
         [HttpGet("LoginAdmin")]
-        public IActionResult LoginAdmin(string sharedKeyAchv1, string sharedKeyAchv2, string sharedKeyAchv3)
+        public IActionResult LoginAdmin(string sharedKey)
         {
-            bool result = orquestador.LoginAdmin(sharedKeyAchv1, sharedKeyAchv2, sharedKeyAchv3);
+            bool result = orquestador.LoginAdmin(sharedKey);
             try
             {
                 if (result == true)

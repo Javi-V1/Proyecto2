@@ -5,6 +5,7 @@ using Capa_Modelo.Persona;
 using Microsoft.VisualBasic;
 using Newtonsoft.Json;
 using System;
+using System.Buffers.Text;
 using System.Collections;
 using System.Collections.Generic;
 using System.Drawing.Text;
@@ -21,11 +22,7 @@ namespace Capa_Logica.Orquestador
         public Escritura_Txt escritura;
         public Lectura_Txt lectura;
         private Servidor servidor;
-        private Usuario usuario; 
-        private string keyAchv1;
-        private string keyAchv2;
-        private string keyAchv3;
-        private bool authLogIn = false;
+        private Usuario usuario;
         List<string> passkey = new List<string>();
         public OrquestadorPersonas()
         {
@@ -58,29 +55,29 @@ namespace Capa_Logica.Orquestador
             Thread th2 = new Thread(() =>
             {
                 EncriptarLista(Listapersonas1, "lista1encrypted.txt");
-                keyAchv1 = DocuLlaves1();
+                
             });
 
             Thread th3 = new Thread(() =>
             {
                 EncriptarLista(Listapersonas2, "lista2encrypted.txt");
-                keyAchv2 = DocuLlaves2();
+                
             });
 
             Thread th4 = new Thread(() =>
             {
                 EncriptarLista(Listapersonas3, "lista3encrypted.txt");
-                keyAchv3 = DocuLlaves3();
+                
             });
 
-                th2.Start();
-                th3.Start();
-                th4.Start();
+            th2.Start();
+            th3.Start();
+            th4.Start();
 
-                th2.Join();
-                th3.Join();
-                th4.Join();
-            
+            th2.Join();
+            th3.Join();
+            th4.Join();
+
         }
         private void DividirLista(List<Persona> Listapersonas1, List<Persona> Listapersonas2, List<Persona> Listapersonas3)
         {
@@ -117,65 +114,14 @@ namespace Capa_Logica.Orquestador
             th1.Join();
         }
         
-        public string DocuLlaves1()
-        {
-            escritura.Escriba_En_TxT(passkey.ToString(), "../", "listakeys.txt");
-            try
-            {
-                byte[] llaveB = usuario.GetSharedKey();
-                string llaveS = Convert.ToBase64String(llaveB);
-                escritura.Escriba_En_TxT(llaveS, "../", "llaveCompartida1.txt");
-                return llaveS;
-            }
-            catch (Exception)
-            {
 
-                throw;
-            }
-            
-        }
-        public string DocuLlaves2()
+        public bool LoginAdmin(string sharedKey)
         {
             try
             {
-                byte[] llaveB = usuario.GetSharedKey();
-                string llaveS = Convert.ToBase64String(llaveB);
-                escritura.Escriba_En_TxT(llaveS, "../", "llaveCompartida2.txt");
-                return llaveS;
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
-           
-        }
-        public string DocuLlaves3()
-        {
-            try
-            {
-                byte[] llaveB = usuario.GetSharedKey();
-                string llaveS = Convert.ToBase64String(llaveB);
-                escritura.Escriba_En_TxT(llaveS, "../", "llaveCompartida3.txt");
-                return llaveS;
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
-            
-        }
-
-
-        public bool LoginAdmin(string sharedKeyAchv1, string sharedKeyAchv2, string sharedKeyAchv3)
-        {
-            
-            try
-            {
-                if (sharedKeyAchv1 == keyAchv1 || sharedKeyAchv2 == keyAchv2 || sharedKeyAchv3 == keyAchv3)
+                byte[] sharedKeyb = Convert.FromBase64String(sharedKey);
+                if (servidor.claves.Contains(sharedKeyb))
                 {
-                    authLogIn = true;
                     return true;
                 }
                 else
@@ -196,9 +142,8 @@ namespace Capa_Logica.Orquestador
             List<Persona> personas = MostrarListas();
             foreach(Persona persona in personas)
             {
-                if(user == persona.user && password == persona.password)
+                if(user == persona.user && password == persona.password && persona.user!=null && persona.password !=null)
                 {
-                    authLogIn = true;
                     return true;
                 }
             }
@@ -243,67 +188,74 @@ namespace Capa_Logica.Orquestador
 
         public List<Persona> MostrarListas()
         {
-            if (authLogIn == true)
-            {
-                List<Persona> tpersonas = new List<Persona>();
-                string contenido = lectura.Lee_Archivo("../lista1encrypted.txt");
-                byte[] listaEncriptada1 = Convert.FromBase64String(contenido);
-                List<Persona> temp1 = ayudante.Deserialize_Modelo<List<Persona>>(Decrypt(listaEncriptada1, keyAchv1));
+            
+             List<Persona> tpersonas = new List<Persona>();
+             string contenido = lectura.Lee_Archivo("../lista1encrypted.txt");
+             byte[] listaEncriptada1 = Convert.FromBase64String(contenido);
+             List<Persona> temp1 = ayudante.Deserialize_Modelo<List<Persona>>(DecriptarLista(listaEncriptada1));
 
-                contenido = lectura.Lee_Archivo("../lista2encrypted.txt");
-                byte[] listaEncriptada2 = Convert.FromBase64String(contenido);
-                List<Persona> temp2 = ayudante.Deserialize_Modelo<List<Persona>>(Decrypt(listaEncriptada2, keyAchv2));
+             contenido = lectura.Lee_Archivo("../lista2encrypted.txt");
+             byte[] listaEncriptada2 = Convert.FromBase64String(contenido);
+             List<Persona> temp2 = ayudante.Deserialize_Modelo<List<Persona>>(DecriptarLista(listaEncriptada2));
 
-                contenido = lectura.Lee_Archivo("../lista3encrypted.txt");
-                byte[] listaEncriptada3 = Convert.FromBase64String(contenido);
-                List<Persona> temp3 = ayudante.Deserialize_Modelo<List<Persona>>(Decrypt(listaEncriptada3, keyAchv3));
+             contenido = lectura.Lee_Archivo("../lista3encrypted.txt");
+             byte[] listaEncriptada3 = Convert.FromBase64String(contenido);
+             List<Persona> temp3 = ayudante.Deserialize_Modelo<List<Persona>>(DecriptarLista(listaEncriptada3));
 
-                tpersonas.AddRange(temp1);
-                tpersonas.AddRange(temp2);
-                tpersonas.AddRange(temp3);
+             tpersonas.AddRange(temp1);
+             tpersonas.AddRange(temp2);
+             tpersonas.AddRange(temp3);
 
-                return tpersonas;
-            }
-            else
-            {
-                return null;
-            }
+             return tpersonas;
+            
         }
 
-        private string Decrypt(byte[] mensajeEncriptado, string psharedkey) 
+        private string DecriptarLista(byte[] mensajeEncriptado)
         {
             try
             {
-                if(psharedkey != null)
+                string ivS = lectura.Lee_Archivo("../iv.txt");
+                byte[] iv = Convert.FromBase64String(ivS);
+                foreach (byte[] clave in servidor.claves)
                 {
-                    byte[] sharedkey = Convert.FromBase64String(psharedkey);
-                    string contenido = usuario.Receive(mensajeEncriptado, servidor.GetivE(), sharedkey);
-                    return contenido;
+                    try
+                    {
+                        string contenido = usuario.Receive(mensajeEncriptado, iv, servidor.key);
+                        return contenido;
+                    }
+                    catch (Exception)
+                    {
+
+                        throw;
+                    }
                 }
-                else
-                {
-                    return null;
-                }
+                return null;
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                Console.WriteLine(e.StackTrace);
                 return null;
             }
         }
 
-        private void EncriptarLista(List<Persona> lista, string rutaArchivo) //obtiene una lista, y la encrypta posteriormente la guarda como un archivo encryptado
+        private void EncriptarLista(List<Persona> lista, string rutaArchivo)
         {
-            
-            string listaAEncriptar = ayudante.Serialice_Modelo(lista);
-            byte[] encryptedData;
-            byte[] iv;
-            byte[] encrypted = Servidor.Send(usuario.usuarioKey, listaAEncriptar, out encryptedData, out iv);
+            try
+            {
+                string listaE = ayudante.Serialice_Modelo(lista);
+                byte[] encrypted = servidor.EncryptMessage(listaE, usuario.usuarioPublicKey, out byte[] iv);
+                string contenido = Convert.ToBase64String(encrypted);
+                escritura.Escriba_En_TxT(contenido, "../", rutaArchivo);
 
-            passkey.Add(Convert.ToBase64String(Servidor.key));//////////////////////////////////
+                escritura.Escriba_En_TxT(Convert.ToBase64String(iv), "../", "iv.txt");
 
-            string contenido = Convert.ToBase64String(encrypted);
-            escritura.Escriba_En_TxT(contenido, "../", rutaArchivo);
+                servidor.GuardarClave();
+
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
 
         private List<Persona> AccederUsuarios()

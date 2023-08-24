@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Capa_Acceso_Datos.Txt;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -10,32 +11,34 @@ namespace Capa_Logica.ECC
 {
     public class Servidor
     {
+        private ECDiffieHellmanCng servidor;
         public byte[] servidorPublicKey;
         internal byte[] servidorKey;
-        internal static byte[] ivE;
-        internal static byte[] key;
+        internal byte[] key;
+        internal List<byte[]> claves = new List<byte[]>();
+        public Escritura_Txt escritura = new Escritura_Txt();
 
         public Servidor()
         {
-            using (ECDiffieHellmanCng servidor = new ECDiffieHellmanCng())
-            {
-                servidor.KeyDerivationFunction = ECDiffieHellmanKeyDerivationFunction.Hash;
-                servidor.HashAlgorithm = CngAlgorithm.Sha256;
-                servidorPublicKey = servidor.PublicKey.ToByteArray();
-                servidorKey = servidor.Key.Export(CngKeyBlobFormat.EccPrivateBlob);
-            }
+            servidor = new ECDiffieHellmanCng();
+            servidor.KeyDerivationFunction = ECDiffieHellmanKeyDerivationFunction.Hash;
+            servidor.HashAlgorithm = CngAlgorithm.Sha256;
+            servidor.KeySize = 256;
+            servidorPublicKey = servidor.PublicKey.ToByteArray();
+            servidorKey = servidor.Key.Export(CngKeyBlobFormat.EccPrivateBlob);
         }
 
-        internal static byte[] Send(byte[] pkey, string secretMessage, out byte[] encryptedMessage, out byte[] iv)
+        internal byte[] EncryptMessage(string secretMessage,byte[] usuarioPublickey, out byte[] iv)
         {
             using (Aes aes = new AesCryptoServiceProvider())
             {
                 aes.KeySize = 256;
-                aes.Key = pkey;
                 aes.GenerateIV();
                 iv = aes.IV;
-                ivE = iv;
-                key = pkey;
+                Servidor servidor = new Servidor();
+                byte[] claveCifrado = servidor.DeriveKeyMaterial(usuarioPublickey);
+                claves.Add(claveCifrado);
+                aes.Key = claveCifrado;
                 //Encrypt the message
                 using (MemoryStream ciphertext = new MemoryStream())
                 using (CryptoStream cs = new CryptoStream(ciphertext, aes.CreateEncryptor(), CryptoStreamMode.Write))
@@ -43,15 +46,20 @@ namespace Capa_Logica.ECC
                     byte[] plaintextMessage = Encoding.UTF8.GetBytes(secretMessage);
                     cs.Write(plaintextMessage, 0, plaintextMessage.Length);
                     cs.Close();
-                    encryptedMessage = ciphertext.ToArray();
-                    return encryptedMessage;
+                    return ciphertext.ToArray();
                 }
             }
         }
-
-        public byte[] GetivE()
+        public void GuardarClave()
         {
-            return ivE;
+            List<string> guardar = new List<string> (); 
+            foreach (byte[] clave in claves)
+            {
+                string claveStr = Convert.ToBase64String(clave);
+                guardar.Add(claveStr);
+            }
+            string clavesTexto = string.Join(Environment.NewLine, guardar);
+            escritura.Escriba_En_TxT(clavesTexto, "../", "Claves.txt");
         }
 
         internal byte[] DeriveKeyMaterial(byte[] usuarioPublicKey)
