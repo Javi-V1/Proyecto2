@@ -13,18 +13,59 @@ namespace Capa_Controller.Controllers
     {
         private OrquestadorPersonas orquestador = new OrquestadorPersonas();
 
-        [HttpGet("Encript")]
-        public IActionResult Encript()
+        public EjemploController()
         {
-            byte[] mensajeencriptado = orquestador.pruebaEncrypt();
-            return Ok(mensajeencriptado);
+            orquestador.ProcesarUsuarios();
         }
 
-        [HttpPost("Decrypt")]
-        public IActionResult Decrypt(byte[] mensajeEncrypt, string sharedKey)
+        [HttpGet("LoginAdmin")]
+        public IActionResult LoginAdmin(string sharedKeyAchv1, string sharedKeyAchv2, string sharedKeyAchv3)
         {
-            string mensajedesencriptado = orquestador.pruebaDecrypt(mensajeEncrypt, sharedKey);
-            return Ok(mensajedesencriptado);
+            bool result = orquestador.LoginAdmin(sharedKeyAchv1, sharedKeyAchv2, sharedKeyAchv3);
+            try
+            {
+                if (result == true)
+                {
+                    MostrarLista();
+                }
+                else
+                {
+                    return BadRequest();
+                }
+                return Ok();
+            }
+            catch (Exception)
+            {
+                return BadRequest();
+            }
+        }
+
+        [HttpGet("MostrarLista")]
+        private IActionResult MostrarLista()
+        {
+            List<Persona> ListaPersonas = orquestador.MostrarListas();
+            return Ok(ListaPersonas);
+        }
+
+        [HttpPost("LoginNormal")]
+        public IActionResult LoginNormal(string user, string password)
+        {
+            bool result = orquestador.LoginNormal(user, password);
+            return result? Ok("Acceso concedido, Bievenido: " + user) : Unauthorized("Acceso rechazado");
+        }
+
+        [HttpPut("CambiarPassword")]
+        public IActionResult CambiarPassword(string user, string password)
+        {
+            bool result = orquestador.CambiarPassword(user, password);
+            return result ? Ok("Se cambio al contrasenna satisfactoriamente") : BadRequest();
+        }
+
+        [HttpDelete("EliminarArchivo")]
+        public IActionResult EliminarArchivo(string rutaArchivo, string nombreArchivo, string extensArchivo)
+        {
+            bool result = orquestador.EliminarArchivo(rutaArchivo, nombreArchivo, extensArchivo);
+            return result ? Ok("Se ha eliminado un archivo") : BadRequest();
         }
     }
 }
