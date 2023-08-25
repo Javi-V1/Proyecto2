@@ -32,13 +32,13 @@ namespace Capa_Controller.Controllers
             {
                 if (result == true)
                 {
-                    MostrarLista();
+                    return Ok(MostrarLista());
                 }
                 else
                 {
                     return BadRequest();
                 }
-                return Ok();
+                
             }
             catch (Exception)
             {

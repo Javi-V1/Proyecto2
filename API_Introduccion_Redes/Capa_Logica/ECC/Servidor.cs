@@ -35,9 +35,10 @@ namespace Capa_Logica.ECC
                 aes.KeySize = 256;
                 aes.GenerateIV();
                 iv = aes.IV;
-                Servidor servidor = new Servidor();
-                byte[] claveCifrado = servidor.DeriveKeyMaterial(usuarioPublickey);
+
+                byte[] claveCifrado = DeriveKeyMaterial(usuarioPublickey);
                 claves.Add(claveCifrado);
+
                 aes.Key = claveCifrado;
                 //Encrypt the message
                 using (MemoryStream ciphertext = new MemoryStream())
